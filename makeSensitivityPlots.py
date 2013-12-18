@@ -39,21 +39,25 @@ gROOT.ForceStyle();
 # speed of light [m/s]
 c0 = 2.9979*10**(8)
 # hbar [GeV/s]
-hbar = 6.5821*10**(-24)
+hbar = 6.5821*10**(-25)
 
-type = "Type0"
+type = "Type2"
+##############################################################################################################
+##############################################################################################################
 
 ### Read limit file ########################################################################################
-openFile = "sourceFiles/MapTable_" + str(type) + ".txt"
+openFile = "sourceFiles/MapTable_" + str(type) + "_SYS.txt"
 # read in the file as a list of lines
 FILE = open(openFile)
 lines = FILE.read().split("\n")
 FILE.close()
 # your data
 data = []
+widths = list()
 
 # read the header
 columnnames = lines[0].split()
+NumberOfLines = len(lines)-1
 # loop over the lines
 for l in range(1,len(lines)):
     line = lines[l]
@@ -75,6 +79,12 @@ for l in range(1,len(lines)):
     # add it to the data array
     data.append(_data)
 
+
+for _data in data[0:NumberOfLines/7]:
+    widths.append(_data["WIDTH"])
+
+print widths
+print ""
 ### Read limit file ########################################################################################
 openFile = "sourceFiles/Compare_CrossSections_with_diff_Mixing.txt"
 # read in the file as a list of lines
@@ -113,6 +123,48 @@ for l in range(1,len(lines)):
     dataXsec.append(_data)
 
 print dataXsec
+
+
+### Read the HiggsinoWinoCrossSection.txt file ########################################################################################
+openFile = "sourceFiles/HiggsinoWinoCrossSection.txt"
+
+# read in the file as a list of lines
+FILE = open(openFile)
+lines = FILE.read().split("\n")
+FILE.close()
+# your data
+Xsec = []
+
+# read the header
+columnnames = lines[0].split()
+# loop over the lines
+for l in range(1,len(lines)):
+    line = lines[l]
+    # split the line
+    columns = line.split()
+    # skip empty lines
+    if len(columns) == 0:
+        continue
+    # check that you have as many columns as columnnames
+    if not len(columns) == len(columnnames):
+        print "ERROR: number of columns in line{0} != number of columns in header line"
+        sys.exit()
+ 
+    # fill a dictionary:
+    _data = dict()
+    for c in range(0,len(columns)):
+        number = columns[c]
+        #if c == 0:
+        #    shorten = columns[c].split("_width")[0]
+        #    number  = shorten[(len(shorten)-3):]
+                    
+        _data[columnnames[c]] = float(number)
+    
+    # add it to the data array
+    Xsec.append(_data)
+
+print Xsec
+
 ### Fill graphs ########################################################################################
 for m in range(0,7):
     array = [] 
@@ -121,17 +173,19 @@ for m in range(0,7):
             array.append(_data)
 
             
-    x        = n.zeros(7, dtype=float)
-    xUp     = n.zeros(7, dtype=float)
-    xDown   = n.zeros(7, dtype=float)
-    y        = n.zeros(7, dtype=float)
-    yExp     = n.zeros(7, dtype=float)
-    yExpUp   = n.zeros(7, dtype=float)
-    yExpDown = n.zeros(7, dtype=float)
-    xsec = n.zeros(7, dtype=float)
-    xsecE = n.zeros(7, dtype=float)
-    xsecWino     = n.zeros(7, dtype=float)
-    xsecHiggsino = n.zeros(7, dtype=float)
+    print "Number of Lines:" + str(NumberOfLines)
+            
+    x            = n.zeros(NumberOfLines/7, dtype=float)
+    xUp          = n.zeros(NumberOfLines/7, dtype=float)
+    xDown        = n.zeros(NumberOfLines/7, dtype=float)
+    y            = n.zeros(NumberOfLines/7, dtype=float)
+    yExp         = n.zeros(NumberOfLines/7, dtype=float)
+    yExpUp       = n.zeros(NumberOfLines/7, dtype=float)
+    yExpDown     = n.zeros(NumberOfLines/7, dtype=float)
+    xsec         = n.zeros(NumberOfLines/7, dtype=float)
+    xsecE        = n.zeros(NumberOfLines/7, dtype=float)
+    xsecWino     = n.zeros(NumberOfLines/7, dtype=float)
+    xsecHiggsino = n.zeros(NumberOfLines/7, dtype=float)
 
     higgsinoMean = 0
     winoMean     = 0
@@ -206,41 +260,41 @@ for m in range(0,7):
 
     legend = rt.TLegend(0.3,0.7,0.9,0.9)
     
-    graph  = rt.TGraph(int(7),x,y)
-    graphExp  = rt.TGraphAsymmErrors(int(7),x,yExp,xUp,xDown,yExpUp,yExpDown)
-    graph2 = rt.TGraph(int(7),x,xsecWino)
-    graph3 = rt.TGraph(int(7),x,xsecHiggsino)
+    graphObs  = rt.TGraph(int(NumberOfLines/7),x,y)
+    graphExp  = rt.TGraphAsymmErrors(int(NumberOfLines/7),x,yExp,xUp,xDown,yExpUp,yExpDown)
+    graph2 = rt.TGraph(int(NumberOfLines/7),x,xsecWino)
+    graph3 = rt.TGraph(int(NumberOfLines/7),x,xsecHiggsino)
     titleName = "m_{#Chi^{#pm}} = " + str(m*100 +100) +  " GeV"
-    graph.SetTitle(titleName)
+    graphObs.SetTitle(titleName)
     graphExp.SetTitle(titleName)
-    graph.SetMarkerStyle(20)
+    graphObs.SetMarkerStyle(20)
     graphExp.SetMarkerStyle(20)
     graph2.SetMarkerStyle(20)
-    graph.GetXaxis().SetTitle("c#tau_{Chi^{#pm}} [m]")
-    graph.GetYaxis().SetTitle("cross-section [pb]")
+    graphObs.GetXaxis().SetTitle("c#tau_{Chi^{#pm}} [m]")
+    graphObs.GetYaxis().SetTitle("cross-section [pb]")
     graphExp.GetXaxis().SetTitle("c#tau_{Chi^{#pm}} [m]")
     graphExp.GetYaxis().SetTitle("cross-section [pb]")
-    xmin = TMath.MinElement(graph.GetN(),graph.GetX())
-    xmax = TMath.MaxElement(graph.GetN(),graph.GetX())
-    #ymin = TMath.MinElement(graph.GetN(),graph.GetY())
-    #ymax = TMath.MaxElement(graph.GetN(),graph.GetY())
+    xmin = TMath.MinElement(graphObs.GetN(),graphObs.GetX())
+    xmax = TMath.MaxElement(graphObs.GetN(),graphObs.GetX())
+    #ymin = TMath.MinElement(graphObs.GetN(),graphObs.GetY())
+    #ymax = TMath.MaxElement(graphObs.GetN(),graphObs.GetY())
 
-    if TMath.MinElement(graph2.GetN(),graph.GetX())<xmin:
-        xmin = TMath.MinElement(graph2.GetN(),graph.GetX())
-    if TMath.MaxElement(graph2.GetN(),graph.GetX())>xmax:
-        xmax = TMath.MaxElement(graph2.GetN(),graph.GetX())
-    #if TMath.MinElement(graph2.GetN(),graph.GetX())<ymin:
-    #    ymin = TMath.MinElement(graph2.GetN(),graph.GetY())
-    #if TMath.MaxElement(graph2.GetN(),graph.GetX())>ymax:
-    #    ymax = TMath.MaxElement(graph2.GetN(),graph.GetY())
+    if TMath.MinElement(graph2.GetN(),graphObs.GetX())<xmin:
+        xmin = TMath.MinElement(graph2.GetN(),graphObs.GetX())
+    if TMath.MaxElement(graph2.GetN(),graphObs.GetX())>xmax:
+        xmax = TMath.MaxElement(graph2.GetN(),graphObs.GetX())
+    #if TMath.MinElement(graph2.GetN(),graphObs.GetX())<ymin:
+    #    ymin = TMath.MinElement(graph2.GetN(),graphObs.GetY())
+    #if TMath.MaxElement(graph2.GetN(),graphObs.GetX())>ymax:
+    #    ymax = TMath.MaxElement(graph2.GetN(),graphObs.GetY())
     
-    graph.SetMinimum(ymin/100)
-    graph.SetMaximum(ymax*1000)
-    graph.GetXaxis().SetLimits(xmin/10,xmax*10)
+    graphObs.SetMinimum(ymin/100)
+    graphObs.SetMaximum(ymax*1000)
+    graphObs.GetXaxis().SetLimits(xmin/10,xmax*10)
     graphExp.SetMinimum(ymin/100)
     graphExp.SetMaximum(ymax*1000)
     graphExp.GetXaxis().SetLimits(xmin/10,xmax*10)
-    graphExp.Draw("AP")
+    graphObs.Draw("AP")
     canvas.Update()
     
     graph2.SetMarkerColor(2)
@@ -253,7 +307,7 @@ for m in range(0,7):
     graph3.SetLineWidth(2)
     graph3.Draw("sameL")
 
-    legend.AddEntry(graph, "exp. limit","p")
+    legend.AddEntry(graphObs, "exp. limit","p")
     legend.AddEntry(graph2, "#sigma^{theo} with wino-like #Chi^{#pm}_{1}","l")
     legend.AddEntry(graph3, "#sigma^{theo} with higgsino-like #Chi^{#pm}_{1}","l")
 
@@ -268,6 +322,169 @@ for m in range(0,7):
     
     pdfName = "plots/HSCPSensitivity_m" + str(m*100 +100) + "_" + str(type) + ".pdf"
     canvas.SaveAs(pdfName)
+    print ""
+
+
+### Fill graphs for Mass plots ########################################################################################
+
+for m in range(0,NumberOfLines/7):
+
+    array = [] 
+    for _data in data:
+        if _data['INDEX']== m:  
+            array.append(_data)
+            print _data
+
+    print ""
+    print array        
+    print ""
+
+    xMass            = n.zeros(7, dtype=float)
+    xUpMass          = n.zeros(7, dtype=float)
+    xDownMass        = n.zeros(7, dtype=float)
+    yMass            = n.zeros(7, dtype=float)
+    yExpMass         = n.zeros(7, dtype=float)
+    yExpUpMass       = n.zeros(7, dtype=float)
+    yExpDownMass     = n.zeros(7, dtype=float)
+    xsecMass         = n.zeros(7, dtype=float)
+    xsecEMass        = n.zeros(7, dtype=float)
+    xsecWinoMass     = n.zeros(7, dtype=float)
+    xsecHiggsinoMass = n.zeros(7, dtype=float)
+
+    obslimit     = []
+    explimit     = []
+    explimitUp   = []
+    explimitDown = []
+    mass         = []
+    width        = []
+    i=0
+    _part = dict()
+    ymin = 1000000
+    ymax = -1000000
+    
+
+    for _part in array:
+
+        width = c0*hbar/float(_part['WIDTH'])
+
+        for _Xsec in Xsec:
+            if _Xsec['MASS'] == _part['MASS']:
+                xsecHiggsinoMass[i] = _Xsec["HIGGSINOLIKE"]
+                xsecWinoMass[i]     = _Xsec["WINOLIKE"]
+                print "xsecHiggsinoMass = " + str(xsecHiggsinoMass[i])
+                print "xsecWinoMass = " + str(xsecWinoMass[i])
+
+ 
+        obslimit.append(float(_part['OBSLIMIT']))
+        explimit.append(float(_part['EXPLIMIT']))
+        explimitUp.append(float(_part['EXPLIMITUP']))
+        explimitDown.append(float(_part['EXPLIMITDOWN']))
+        mass.append(_part['MASS'])
+        
+        xsecMass[i] = _part['XSECTION']
+        if ymin>xsecMass[i]:
+                ymin = xsecMass[i]
+        if ymax<xsecMass[i]:
+            ymax = xsecMass[i]
+        xMass[i] = float(_part['MASS'])
+        xUpMass[i] = 0.0
+        xDownMass[i] = 0.0
+        if float(_part['OBSLIMIT']) == -1:
+            yMass[i]=1000
+        else:
+            yMass[i] = float(_part['OBSLIMIT'])
+        if float(_part['EXPLIMIT']) == -1:
+            yExpMass[i]=1000
+        else:
+            yExp[i] = float(_part['EXPLIMIT'])
+        if float(_part['EXPLIMITUP']) == -1:
+            yExpUpMass[i]=0
+        else:
+            yExpUpMass[i] = float(_part['EXPLIMITUP']) - float(_part['EXPLIMIT'])
+        if float(_part['EXPLIMITDOWN']) == -1:
+            yExpDownMass[i]=0
+        else:
+            yExpDownMass[i] = float(_part['EXPLIMIT']) - float(_part['EXPLIMITDOWN'])
+        if ymin>yMass[i]:
+                ymin = yMass[i]
+        if ymax<yMass[i]:
+                ymax = yMass[i]
+        print "Width = " + str(xMass[i])
+        print "obs. limit = " + str(yMass[i])
+        print "exp. limit = " + str(yExpMass[i])
+        i = i+1
+        
+    
+    canvasMass = rt.TCanvas("canvas","canvas",500,500)
+    canvasMass.cd()
+    #canvasMass.SetLogx()
+    canvasMass.SetLogy()
+
+    legendMass = rt.TLegend(0.3,0.7,0.9,0.9)
+    
+    graphObsMass  = rt.TGraph(int(7),xMass,yMass)
+    graphExpMass  = rt.TGraphAsymmErrors(int(7),xMass,yExpMass,xUpMass,xDownMass,yExpUpMass,yExpDownMass)
+    graph2Mass = rt.TGraph(int(7),xMass,xsecWinoMass)
+    graph3Mass = rt.TGraph(int(7),xMass,xsecHiggsinoMass)
+    titleName = "c#tau_{Chi^{#pm}} = " + str('%0.1f' %width) +  " m"
+    #titleName = str('%0.1E' %widths)
+    graphObsMass.SetTitle(titleName)
+    graphExpMass.SetTitle(titleName)
+    graphObsMass.SetMarkerStyle(20)
+    graphExpMass.SetMarkerStyle(20)
+    graph2Mass.SetMarkerStyle(20)
+    graphObsMass.GetXaxis().SetTitle("m_{Chi^{#pm}} [GeV]")
+    graphObsMass.GetYaxis().SetTitle("cross-section [pb]")
+    graphExpMass.GetXaxis().SetTitle("m_{Chi^{#pm}} [GeV]")
+    graphExpMass.GetYaxis().SetTitle("cross-section [pb]")
+    xmin = TMath.MinElement(graphObsMass.GetN(),graphObsMass.GetX())
+    xmax = TMath.MaxElement(graphObsMass.GetN(),graphObsMass.GetX())
+    #ymin = TMath.MinElement(graphObs.GetN(),graphObs.GetY())
+    #ymax = TMath.MaxElement(graphObs.GetN(),graphObs.GetY())
+
+    if TMath.MinElement(graph2Mass.GetN(),graphObsMass.GetX())<xmin:
+        xmin = TMath.MinElement(graph2Mass.GetN(),graphObsMass.GetX())
+    if TMath.MaxElement(graph2Mass.GetN(),graphObsMass.GetX())>xmax:
+        xmax = TMath.MaxElement(graph2Mass.GetN(),graphObsMass.GetX())
+    #if TMath.MinElement(graph2.GetN(),graphObs.GetX())<ymin:
+    #    ymin = TMath.MinElement(graph2.GetN(),graphObs.GetY())
+    #if TMath.MaxElement(graph2.GetN(),graphObs.GetX())>ymax:
+    #    ymax = TMath.MaxElement(graph2.GetN(),graphObs.GetY())
+    
+    graphObsMass.SetMinimum(ymin/100)
+    graphObsMass.SetMaximum(ymax*1000)
+    graphObsMass.GetXaxis().SetLimits(0,800)
+    graphExpMass.SetMinimum(ymin/100)
+    graphExpMass.SetMaximum(ymax*1000)
+    graphExpMass.GetXaxis().SetLimits(0,800)
+    graphObsMass.Draw("AP")
+    canvasMass.Update()
+    
+    graph2Mass.SetMarkerColor(2)
+    #graph2.SetMarkerSize()
+    graph2Mass.SetLineColor(2)
+    graph2Mass.SetLineWidth(2)
+    graph2Mass.Draw("sameL")
+
+    graph3Mass.SetLineColor(3)
+    graph3Mass.SetLineWidth(2)
+    graph3Mass.Draw("sameL")
+
+    legendMass.AddEntry(graphObs, "exp. limit","p")
+    legendMass.AddEntry(graph2, "#sigma^{theo} with wino-like #Chi^{#pm}_{1}","l")
+    legendMass.AddEntry(graph3, "#sigma^{theo} with higgsino-like #Chi^{#pm}_{1}","l")
+
+    legendMass.SetTextFont(132)
+    legendMass.SetTextSize(0.042)
+    legendMass.Draw("same")
+
+    infoMass = rt.TLatex();
+    infoMass.SetNDC();
+    infoMass.SetTextSize(0.05);
+    infoMass.DrawLatex(0.60, 0.60,type);
+    
+    pdfName = "plots/HSCPSensitivity_width" + str(m) + "_" + str(type) + ".pdf"
+    canvasMass.SaveAs(pdfName)
     print ""
 
 
