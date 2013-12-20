@@ -42,11 +42,13 @@ c0 = 2.9979*10**(8)
 hbar = 6.5821*10**(-25)
 
 type = "Type2"
+
+sample = "SYS"
 ##############################################################################################################
 ##############################################################################################################
 
 ### Read limit file ########################################################################################
-openFile = "sourceFiles/MapTable_" + str(type) + "_SYS.txt"
+openFile = "sourceFiles/MapTable_" + str(type) + "_" + str(sample) + ".txt"
 # read in the file as a list of lines
 FILE = open(openFile)
 lines = FILE.read().split("\n")
@@ -83,8 +85,6 @@ for l in range(1,len(lines)):
 for _data in data[0:NumberOfLines/7]:
     widths.append(_data["WIDTH"])
 
-print widths
-print ""
 ### Read limit file ########################################################################################
 openFile = "sourceFiles/Compare_CrossSections_with_diff_Mixing.txt"
 # read in the file as a list of lines
@@ -121,8 +121,6 @@ for l in range(1,len(lines)):
     
     # add it to the data array
     dataXsec.append(_data)
-
-print dataXsec
 
 
 ### Read the HiggsinoWinoCrossSection.txt file ########################################################################################
@@ -163,7 +161,6 @@ for l in range(1,len(lines)):
     # add it to the data array
     Xsec.append(_data)
 
-print Xsec
 
 ### Fill graphs ########################################################################################
 for m in range(0,7):
@@ -171,6 +168,7 @@ for m in range(0,7):
     for _data in data:
         if _data['MASS']== m*100 +100:  
             array.append(_data)
+            
 
             
     print "Number of Lines:" + str(NumberOfLines)
@@ -198,8 +196,6 @@ for m in range(0,7):
 
     higgsinoMean = (higgsinoMean/i)*10**9
     winoMean     = (winoMean/i)*10**9
-
-    print "xsec Higgsino = " + str(higgsinoMean)
     
     obslimit     = []
     explimit     = []
@@ -211,6 +207,7 @@ for m in range(0,7):
     _part = dict()
     ymin = 1000000
     ymax = -1000000
+    print array
     for _part in array:
         obslimit.append(float(_part['OBSLIMIT']))
         explimit.append(float(_part['EXPLIMIT']))
@@ -220,6 +217,7 @@ for m in range(0,7):
         xsec[i] = _part['XSECTION']
         xsecWino[i] = winoMean
         xsecHiggsino[i] = higgsinoMean
+
         if ymin>xsec[i]:
                 ymin = xsec[i]
         if ymax<xsec[i]:
@@ -294,6 +292,8 @@ for m in range(0,7):
     graphExp.SetMinimum(ymin/100)
     graphExp.SetMaximum(ymax*1000)
     graphExp.GetXaxis().SetLimits(xmin/10,xmax*10)
+    #graphExp.GetXaxis().SetLimits(0.010,100)
+    #graphObs.GetXaxis().SetLimits(0.010,100)
     graphObs.Draw("AP")
     canvas.Update()
     
@@ -320,10 +320,10 @@ for m in range(0,7):
     info.SetTextSize(0.05);
     info.DrawLatex(0.60, 0.60,type);
     
-    pdfName = "plots/HSCPSensitivity_m" + str(m*100 +100) + "_" + str(type) + ".pdf"
+    pdfName = "plots/HSCPSensitivity_m" + str(m*100 +100) + "_" + str(type) + "_" + str(sample)+ ".pdf"
     canvas.SaveAs(pdfName)
-    print ""
 
+#sys.exit()
 
 ### Fill graphs for Mass plots ########################################################################################
 
@@ -334,10 +334,6 @@ for m in range(0,NumberOfLines/7):
         if _data['INDEX']== m:  
             array.append(_data)
             print _data
-
-    print ""
-    print array        
-    print ""
 
     xMass            = n.zeros(7, dtype=float)
     xUpMass          = n.zeros(7, dtype=float)
@@ -371,9 +367,7 @@ for m in range(0,NumberOfLines/7):
             if _Xsec['MASS'] == _part['MASS']:
                 xsecHiggsinoMass[i] = _Xsec["HIGGSINOLIKE"]
                 xsecWinoMass[i]     = _Xsec["WINOLIKE"]
-                print "xsecHiggsinoMass = " + str(xsecHiggsinoMass[i])
-                print "xsecWinoMass = " + str(xsecWinoMass[i])
-
+                
  
         obslimit.append(float(_part['OBSLIMIT']))
         explimit.append(float(_part['EXPLIMIT']))
@@ -420,7 +414,7 @@ for m in range(0,NumberOfLines/7):
     #canvasMass.SetLogx()
     canvasMass.SetLogy()
 
-    legendMass = rt.TLegend(0.3,0.7,0.9,0.9)
+    legendMass = rt.TLegend(0.3,0.72,0.9,0.9)
     
     graphObsMass  = rt.TGraph(int(7),xMass,yMass)
     graphExpMass  = rt.TGraphAsymmErrors(int(7),xMass,yExpMass,xUpMass,xDownMass,yExpUpMass,yExpDownMass)
@@ -483,8 +477,7 @@ for m in range(0,NumberOfLines/7):
     infoMass.SetTextSize(0.05);
     infoMass.DrawLatex(0.60, 0.60,type);
     
-    pdfName = "plots/HSCPSensitivity_width" + str(m) + "_" + str(type) + ".pdf"
+    pdfName = "plots/HSCPSensitivity_width" + str(m) + "_" + str(type) + "_" + str(sample) + ".pdf"
     canvasMass.SaveAs(pdfName)
-    print ""
-
+ 
 
